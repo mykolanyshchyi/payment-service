@@ -1,0 +1,74 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/payment-service?options=-c%20search_path=${spring.jpa.properties.hibernate.default_schema}
+    username: payment-service-usr
+    password: 8b!32@@MRY!gFYs93
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
+      leak-detection-threshold: 60000
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 500
+        prepStmtCacheSqlLimit: 2048
+  jpa:
+      hibernate:
+        ddl-auto: update
+      properties:
+        hibernate:
+          default_schema: payment-service
+          jdbc:
+            time_zone: UTC
+
+  flyway:
+    clean-disabled: true
+    enabled: true
+    fail-on-missing-locations: true
+    schemas: payment-service
+
+resilience4j:
+  retry:
+    instances:
+      PROVIDER_A:
+        max-attempts: 3
+        wait-duration: 200ms
+        retry-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - java.io.IOException
+      PROVIDER_B:
+        max-attempts: 4
+        wait-duration: 300ms
+        ignore-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException$BadRequest
+  circuitbreaker:
+    instances:
+      PROVIDER_A:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+      PROVIDER_B:
+        sliding-window-size: 20
+        failure-rate-threshold: 40
+        wait-duration-in-open-state: 45s
+  ratelimiter:
+    instances:
+      PROVIDER_A:
+        limit-for-period: 50
+        limit-refresh-period: 1s
+        timeout-duration: 0
+      PROVIDER_B:
+        limit-for-period: 20
+        limit-refresh-period: 500ms
+
+springdoc:
+  swagger-ui:
+    docExpansion: none
+    enabled: true
+    operationsSorter: method
+    path: swagger-ui
+    tagsSorter: alpha
+
